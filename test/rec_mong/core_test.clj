@@ -3,6 +3,8 @@
         rec-mong.core)
   (:require [monger.core :as mg]))
 
+(defrecord Foo [bar baz])
+
 (defn cleanup [f]
   (f)
   (remove-all Foo)
@@ -14,8 +16,6 @@
 
 (def uri "mongodb://srt:rk7aPbTw@ds043487.mongolab.com:43487/srt")
 (defonce conn (mg/connect-via-uri! uri))
-
-(defrecord Foo [bar baz])
 
 (defn new-foo [bar baz] (->Foo bar baz))
 
@@ -48,3 +48,9 @@
                 (is (= 2 (count read-foos)))
                 (is (= (list save-foo2 nil) read-foos))
                 ))))))))
+
+(deftest test-multi-record-save
+  (let [foo1 (new-foo 1 2)
+        foo2 (new-foo 3 4)]
+    (is (= true (save [foo1 foo2])))
+  ))

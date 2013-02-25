@@ -2,7 +2,8 @@
   (:refer-clojure :exclude [remove])
   (:require [monger.core :as mg])
   (:use [monger.collection :only [insert insert-and-return find-maps find-one-as-map find-map-by-id
-                                  remove]]
+                                  remove insert-batch]]
+        [monger.result :only [ok?]]
         [clojure.pprint :only [pprint]]
         [clojure.tools.logging])
   (:import [com.mongodb MongoOptions ServerAddress]
@@ -20,13 +21,15 @@
     mf))
 
 (defn save 
-  "Save a record to database under a new id
-  returns the record with :_id"
+  "Save a record or records to database under a new id
+  for single record returns the record with :_id
+  for multiple records returns if the save went ok"
   [record]
-  (let [kind (.getName (class record))
-        id (ObjectId.)]
-    (when-let [m (insert-and-return kind (assoc record :_id id))]
-      ((map->record (class record)) m))))
+  (let [kind (.getName (class record))]
+    (if (sequential? record)
+      (ok? (insert-batch kind record))
+      (when-let [m (insert-and-return kind (assoc record :_id (ObjectId.)))]
+        ((map->record (class record)) m)))))
 
 (defn id 
   "return the database id of a record"
