@@ -1,7 +1,8 @@
 (ns rec-mong.core-test
   (:use clojure.test
         rec-mong.core)
-  (:require [monger.core :as mg]))
+  (:require [monger.core :as mg]
+            [monger.conversion :as mc]))
 
 (defrecord Foo [bar baz])
 
@@ -43,14 +44,19 @@
               (is (= ids (map id read-foos)))
               (is (= (hash-set save-foo1 save-foo2) (set read-foos)))
               (let [ids (list (str id2) "012345678901234567890123")
-                    ids (map str ids)
+                    ids (map mc/to-object-id ids)
                     read-foos (retrieve Foo ids)]
-                (is (= 2 (count read-foos)))
-                (is (= (list save-foo2 nil) read-foos))
+                (is (= 1 (count read-foos)))
+                (is (= (list save-foo2) read-foos))
                 ))))))))
 
-(deftest test-multi-record-save
+(deftest test-multi-record-save-and-read
   (let [foo1 (new-foo 1 2)
         foo2 (new-foo 3 4)]
     (is (= true (save [foo1 foo2])))
-  ))
+    (let [ids (map id (query :kind Foo))]
+      (is (= 2 (count ids)))
+      (let [foos (retrieve Foo ids)]
+        (is (= 2 (count foos)))
+        (is (= ids (map id foos)))
+  ))))

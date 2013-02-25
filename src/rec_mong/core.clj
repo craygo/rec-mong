@@ -4,6 +4,7 @@
   (:use [monger.collection :only [insert insert-and-return find-maps find-one-as-map find-map-by-id
                                   remove insert-batch]]
         [monger.result :only [ok?]]
+        [monger.operators :only [$in]]
         [clojure.pprint :only [pprint]]
         [clojure.tools.logging])
   (:import [com.mongodb MongoOptions ServerAddress]
@@ -25,9 +26,10 @@
   for single record returns the record with :_id
   for multiple records returns if the save went ok"
   [record]
-  (let [kind (.getName (class record))]
-    (if (sequential? record)
-      (ok? (insert-batch kind record))
+  (if (sequential? record)
+    (let [kind (.getName (class (first record)))]
+      (ok? (insert-batch kind record)))
+    (let [kind (.getName (class record))]
       (when-let [m (insert-and-return kind (assoc record :_id (ObjectId.)))]
         ((map->record (class record)) m)))))
 
@@ -47,13 +49,18 @@
   otherwise return a single record for the document with the given kind and id"
   [kind id]
   (if (sequential? id)
-    (map #(retrieve kind %) id)
-    ;(map (map->record kind) (find-maps (.getName kind) (vec (map db-id id))))
+    ;(map #(retrieve kind %) id)
+    (map (map->record kind) (find-maps (.getName kind) {:_id {$in id}}))
     (if-let [m (find-map-by-id (.getName kind) (db-id id))]
       ((map->record kind) m))))
 
-(defn query [& {:keys [kind]}]
-  (map (map->record kind) (find-maps (.getName kind))))
+(defn query [& {:keys [kind filter]}]
+  (if filter
+    (do
+      (prn filter)
+      (map (map->record kind) (find-maps (.getName kind) filter)))
+    (map (map->record kind) (find-maps (.getName kind)))))
+
 
 (defn remove-all [kind]
   (remove (.getName kind)))
