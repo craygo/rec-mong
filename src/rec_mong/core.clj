@@ -56,9 +56,7 @@
 
 (defn query [& {:keys [kind filter]}]
   (if filter
-    (do
-      (prn filter)
-      (map (map->record kind) (find-maps (.getName kind) filter)))
+    (map (map->record kind) (find-maps (.getName kind) filter))
     (map (map->record kind) (find-maps (.getName kind)))))
 
 
