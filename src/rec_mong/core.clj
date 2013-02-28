@@ -59,6 +59,9 @@
     (map (map->record kind) (find-maps (.getName kind) filter))
     (map (map->record kind) (find-maps (.getName kind)))))
 
-
 (defn remove-all [kind]
   (remove (.getName kind)))
+
+(defmethod print-method org.bson.types.ObjectId
+  [oid out]
+  (.write out (str `(org.bson.types.ObjectId. ~(str oid)))))
