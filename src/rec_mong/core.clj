@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [remove])
   (:require [monger.core :as mg])
   (:use [monger.collection :only [insert insert-and-return find-maps find-one-as-map find-map-by-id
-                                  remove insert-batch]]
+                                  remove remove-by-id insert-batch]]
         [monger.result :only [ok?]]
         [monger.operators :only [$in]]
         [clojure.pprint :only [pprint]]
@@ -61,6 +61,9 @@
 
 (defn remove-all [kind]
   (remove (.getName kind)))
+
+(defn delete [kind id]
+  (remove-by-id (.getName kind) (db-id id)))
 
 (defmethod print-method org.bson.types.ObjectId
   [oid out]
