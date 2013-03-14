@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [remove])
   (:require [monger.core :as mg])
   (:use [monger.collection :only [insert insert-and-return find-maps find-one-as-map find-map-by-id
-                                  remove remove-by-id insert-batch]]
+                                  remove remove-by-id insert-batch save-and-return]]
         [monger.result :only [ok?]]
         [monger.operators :only [$in]]
         [clojure.pprint :only [pprint]]
@@ -41,8 +41,11 @@
                (not (contains? (set (doall (map #(ok? (monger.collection/save kind %)) existing))) false))))
       )
     (let [kind (.getName (class record))]
-      (when-let [m (insert-and-return kind (assoc record :_id (ObjectId.)))]
-        ((map->record (class record)) m)))))
+      (if (:_id record)
+        (if-let [m (save-and-return kind record)]
+          ((map->record (class record)) m))
+        (if-let [m (insert-and-return kind (assoc record :_id (ObjectId.)))]
+          ((map->record (class record)) m))))))
 
 (defn db-id [id]
   (condp instance? id

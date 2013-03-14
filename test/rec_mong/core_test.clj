@@ -73,3 +73,15 @@
           (is (= 2 (count foos)))
           (is (= foo1 (first foos)))
     )))))
+
+(deftest test-single-record-save-with-update
+  (let [foo1 (save (new-foo 1 2))
+        foo2 (save (new-foo 3 4))]
+    (let [ids (map id (query :kind Foo))]
+      (is (= 2 (count ids)))
+      (let [foo1 (assoc foo1 :bar "b")]
+        (is (save foo1 ))
+        (let [foos (query :kind Foo)]
+          (is (= 2 (count foos)))
+          (is (= foo1 (first foos)))
+    )))))
