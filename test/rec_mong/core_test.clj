@@ -1,6 +1,7 @@
 (ns rec-mong.core-test
   (:use clojure.test
-        rec-mong.core)
+        rec-mong.core
+        [monger.result :only [ok?]])
   (:require [monger.core :as mg]
             [monger.conversion :as mc]))
 
@@ -15,7 +16,7 @@
 
 (use-fixtures :each cleanup)
 
-(def uri "mongodb://srt:rk7aPbTw@ds043487.mongolab.com:43487/srt")
+(def uri "mongodb://localhost:27017/srt")
 (defonce conn (mg/connect-via-uri! uri))
 
 (defn new-foo [bar baz] (->Foo bar baz))
@@ -60,3 +61,15 @@
         (is (= 2 (count foos)))
         (is (= ids (map id foos)))
   ))))
+
+(deftest test-multi-record-save-with-update
+  (let [foo1 (save (new-foo 1 2))
+        foo2 (save (new-foo 3 4))]
+    (let [ids (map id (query :kind Foo))]
+      (is (= 2 (count ids)))
+      (let [foo1 (assoc foo1 :bar "b")]
+        (is (save (vector foo1 foo2)))
+        (let [foos (query :kind Foo)]
+          (is (= 2 (count foos)))
+          (is (= foo1 (first foos)))
+    )))))

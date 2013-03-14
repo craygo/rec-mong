@@ -21,22 +21,28 @@
         mf (ns-resolve (symbol cn) mfs)]
     mf))
 
-(defn save 
-  "Save a record or records to database under a new id
-  for single record returns the record with :_id
-  for multiple records returns if the save went ok"
-  [record]
-  (if (sequential? record)
-    (let [kind (.getName (class (first record)))]
-      (ok? (insert-batch kind record)))
-    (let [kind (.getName (class record))]
-      (when-let [m (insert-and-return kind (assoc record :_id (ObjectId.)))]
-        ((map->record (class record)) m)))))
-
 (defn id 
   "return the database id of a record"
   [record]
   (:_id record))
+
+(defn save 
+  "Save or update a record or records to database
+  for single record returns the record with :_id
+  for multiple records returns if the save went ok"
+  [record]
+  (if (sequential? record)
+    (let [kind (.getName (class (first record)))
+          new-ones (filter (comp nil? id) record)
+          existing (filter id record)]
+      ;(prn "save " new-ones existing)
+      (and (or (empty? new-ones) (ok? (insert-batch kind new-ones)))
+           (or (empty? existing)
+               (not (contains? (set (doall (map #(ok? (monger.collection/save kind %)) existing))) false))))
+      )
+    (let [kind (.getName (class record))]
+      (when-let [m (insert-and-return kind (assoc record :_id (ObjectId.)))]
+        ((map->record (class record)) m)))))
 
 (defn db-id [id]
   (condp instance? id
